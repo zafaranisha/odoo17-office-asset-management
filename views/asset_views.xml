@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 1. Tampilan List / Tabel (Tree View) -->
+    <record id="view_office_asset_tree" model="ir.ui.view">
+        <field name="name">office.asset.tree</field>
+        <field name="model">office.asset</field>
+        <field name="arch" type="xml">
+            <tree string="Office Assets" decoration-success="state == 'available'" decoration-warning="state == 'borrowed'" decoration-danger="state == 'maintenance'">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="category"/>
+                <field name="employee_id"/>
+                <field name="borrow_date"/>
+                <field name="purchase_value"/>
+                <field name="state" widget="badge" decoration-success="state == 'available'" decoration-warning="state == 'borrowed'" decoration-danger="state == 'maintenance'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- 2. Tampilan Form Detail (Form View + Chatter) -->
+    <record id="view_office_asset_form" model="ir.ui.view">
+        <field name="name">office.asset.form</field>
+        <field name="model">office.asset</field>
+        <field name="arch" type="xml">
+            <form string="Office Asset">
+                <header>
+                    <button name="action_borrow" string="Borrow Asset" type="object" class="oe_highlight" invisible="state != 'available'"/>
+                    <button name="action_return" string="Return Asset" type="object" class="btn-secondary" invisible="state != 'borrowed'"/>
+                    <button name="action_maintenance" string="Set to Maintenance" type="object" invisible="state == 'maintenance'"/>
+                    <button name="action_return" string="Finish Maintenance" type="object" class="oe_highlight" invisible="state != 'maintenance'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="available,borrowed,maintenance"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <span class="o_form_label">Asset Code</span>
+                        <h2>
+                            <field name="code"/>
+                        </h2>
+                        <label for="name" string="Asset Name"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. MacBook Pro M2 14-inch"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Asset Information">
+                            <field name="category"/>
+                            <field name="purchase_date"/>
+                            <field name="purchase_value"/>
+                        </group>
+                        <group string="Assignment &amp; Borrowing">
+                            <field name="employee_id" readonly="state == 'borrowed'"/>
+                            <field name="borrow_date" readonly="state == 'borrowed'"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Condition &amp; Notes">
+                            <field name="notes" placeholder="Write serial number, physical condition, or accessories included..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <!-- Audit Log / Chatter -->
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- 3. Tampilan Pencarian & Filter (Search View) -->
+    <record id="view_office_asset_search" model="ir.ui.view">
+        <field name="name">office.asset.search</field>
+        <field name="model">office.asset</field>
+        <field name="arch" type="xml">
+            <search string="Search Office Assets">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="employee_id"/>
+                <filter string="Available" name="filter_available" domain="[('state', '=', 'available')]"/>
+                <filter string="Borrowed" name="filter_borrowed" domain="[('state', '=', 'borrowed')]"/>
+                <filter string="Under Maintenance" name="filter_maintenance" domain="[('state', '=', 'maintenance')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Category" name="group_by_category" context="{'group_by': 'category'}"/>
+                    <filter string="Status" name="group_by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- 4. Window Action & Menu Utama -->
+    <record id="action_office_asset" model="ir.actions.act_window">
+        <field name="name">Office Assets</field>
+        <field name="res_model">office.asset</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Register your first office asset!
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_office_asset_root" name="Office Assets" sequence="10"/>
+    <menuitem id="menu_office_asset_items" name="Assets List" parent="menu_office_asset_root" action="action_office_asset" sequence="10"/>
+
+    <!-- 5. Inheritance: Tambah Tab Assigned Assets & Computed Total Value di Form Karyawan -->
+    <record id="view_employee_form_inherit_asset" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.asset</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Assigned Assets" name="assigned_assets">
+                    <group>
+                        <field name="total_asset_value"/>
+                    </group>
+                    <field name="asset_ids" readonly="1">
+                        <tree>
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="category"/>
+                            <field name="borrow_date"/>
+                            <field name="purchase_value"/>
+                            <field name="state" widget="badge" decoration-success="state == 'available'" decoration-warning="state == 'borrowed'" decoration-danger="state == 'maintenance'"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
